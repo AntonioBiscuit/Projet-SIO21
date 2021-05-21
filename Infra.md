@@ -1,14 +1,14 @@
 # Configuration de l'infrastructure
 
 - [Configuration de l'infrastructure](#configuration-de-linfrastructure)
+  - [Résumé de la configuration des Switchs](#résumé-de-la-configuration-des-switchs)
+  - [Résumé de la configuration des Routeurs](#résumé-de-la-configuration-des-routeurs)
   - [Commandes communes à tous les équipements](#commandes-communes-à-tous-les-équipements)
     - [Hostname](#hostname)
     - [Sécuriser l'accès privilégié](#sécuriser-laccès-privilégié)
     - [Configuration Telnet](#configuration-telnet)
-  - [Switchs](#switchs)
-    - [Étapes de la configuration dans l'ordre:](#étapes-de-la-configuration-dans-lordre)
-  - [Routeurs](#routeurs)
-    - [Étapes de la configuration dans l'ordre:](#étapes-de-la-configuration-dans-lordre-1)
+  - [Commandes et procédures des switchs en détail](#commandes-et-procédures-des-switchs-en-détail)
+  - [Commandes et procédures des routeurs en détail](#commandes-et-procédures-des-routeurs-en-détail)
     - [Configurer les interfaces](#configurer-les-interfaces)
     - [Configurer RIPv2 (routage dynamique)](#configurer-ripv2-routage-dynamique)
       - [Étapes dans l'ordre](#étapes-dans-lordre)
@@ -16,6 +16,34 @@
     - [Configurer le protocole HSRP](#configurer-le-protocole-hsrp)
       - [Étapes dans l'ordre](#étapes-dans-lordre-1)
       - [Exemple](#exemple)
+
+Ce fichier rassemble l'ensemble des procédures liées à l'infrastructure réseau, à savoir l'installation et la configuration de l'ensemble des switchs et des routeurs.
+
+Les procédures d'installation sont tout d'abord présentées en résumé avant de rentrer plus en détail pour chaque commande.
+
+
+## Résumé de la configuration des Switchs
+
+Sur un switch vierge, en se connectant avec un câble Serial et l'utilitaire de son choix:
+
+- Configurer le hostname
+- Sécuriser l'accès privilégié
+- Configurer le Telnet
+
+
+
+## Résumé de la configuration des Routeurs
+
+Sur un routeur vierge, en se connectant avec un câble Serial et l'utilitaire de son choix:
+
+- Configurer le hostname
+- Sécuriser l'accès
+- Configurer chaque interface du routeur
+- Configurer Telnet
+- Configurer RIPv2 (routage dynamique)
+- Configurer le protocole HSRP (failover)
+
+---
 
 ## Commandes communes à tous les équipements
 
@@ -38,31 +66,9 @@ login
 ```
 
 
-## Switchs
+## Commandes et procédures des switchs en détail
 
-### Étapes de la configuration dans l'ordre:
-
-Sur un switch vierge, en se connectant avec un câble Serial et l'utilitaire de son choix:
-
-- Configurer le hostname
-- Sécuriser l'accès privilégié
-- Configurer le Telnet
-
-La configuration initiale sur un switch vierge doit se faire avec un cable Serial.
-Toutes les commandes sont communes à tous les équipements, il faudra simplement ajuster en fonction de l'adressage et du réseau.
-
-
-
-## Routeurs
-
-### Étapes de la configuration dans l'ordre:
-
-- Configurer le hostname
-- Sécuriser l'accès
-- Configurer chaque interface du routeur
-- Configurer Telnet
-- Configurer RIPv2 (routage dynamique)
-- Configurer le protocole HSRP (failover)
+## Commandes et procédures des routeurs en détail
 
 ### Configurer les interfaces
 

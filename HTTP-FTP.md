@@ -1,6 +1,7 @@
 # Mise en place du conteneur HTTP + FTP
 
 - [Mise en place du conteneur HTTP + FTP](#mise-en-place-du-conteneur-http--ftp)
+  - [Installation de Debian](#installation-de-debian)
   - [Installation de Docker sur le serveur](#installation-de-docker-sur-le-serveur)
     - [Mise à jour et installation de paquets de base pour Docker](#mise-à-jour-et-installation-de-paquets-de-base-pour-docker)
     - [Ajout du dépôt Docker](#ajout-du-dépôt-docker)
@@ -12,11 +13,15 @@
       - [Vous n'avez pas le droit Monsieur !](#vous-navez-pas-le-droit-monsieur-)
       - [Appliquer les modifications](#appliquer-les-modifications)
 
+## Installation de Debian
+
+![](debian-logo.png)
+
+Suivre la procédure d'installation de Debian de base, non graphique avec simplement un serveur SSH et les dossiers `/var`, par exemple; séparés.
+
 ## Installation de Docker sur le serveur
 
 ![](docker-logo.png)
-
-
 
 ### Mise à jour et installation de paquets de base pour Docker
 
@@ -115,4 +120,3 @@ Redémarrer (ou démarrer) avec les commandes:
 
     etc/init.d/vsftpd (re)start
     etc/init.d/nginx (re)start
-

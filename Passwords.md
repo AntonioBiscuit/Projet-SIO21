@@ -1,8 +1,18 @@
 # Mots de passe et identifiants
 
+![](Password.png)
+
 Fichier rassemblant l'ensemble des mots de passes pour les routeurs, switches et serveurs de l'infrastructure
 
-Le nom entre parethèses correspond au hostname du serveur ou de l'équipement si le nom de correspond pas.
+Le nom entre parethèses correspond au hostname du serveur ou de l'équipement.
+
+- [Mots de passe et identifiants](#mots-de-passe-et-identifiants)
+  - [Serveurs](#serveurs)
+    - [Serveur Rennes (`rennes-svr`)](#serveur-rennes-rennes-svr)
+    - [Serveur DMZ (`SERVEUR-DMZ`)](#serveur-dmz-serveur-dmz)
+    - [Ferme Proxmox](#ferme-proxmox)
+  - [Switches et routeurs](#switches-et-routeurs)
+
 
 ## Serveurs
 
