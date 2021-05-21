@@ -17,6 +17,8 @@
 
 Nous avons choisi d'utiliser le nom de domaine `ggp.local`
 
+![](adressage.svg)
+
 ## Solutions choisies
 
 Nos solutions tournent sur un mix de machines virtuelles, de conteneurs et de bare-metal.
