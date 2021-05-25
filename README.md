@@ -549,7 +549,7 @@ Attribuer une IP au routeur virtuel
 
 ## Connexion
 
-L'adresse permettant de se connecter à l'interface web de Proxmox est la suivante: https://192.168.100.2. 
+L'adresse permettant de se connecter à l'interface web de Proxmox est la suivante: https://172.16.200.1:8006 
 
 Le `https` est **nécessaire** pour se connecter !
 
