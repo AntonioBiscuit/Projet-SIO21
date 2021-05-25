@@ -1,6 +1,6 @@
 # Mots de passe et identifiants
 
-![](Password.png)
+![](img/Password.png)
 
 Fichier rassemblant l'ensemble des mots de passes pour les routeurs, switches et serveurs de l'infrastructure
 

@@ -6,7 +6,7 @@
     - [Mise à jour et installation de paquets de base pour Docker](#mise-à-jour-et-installation-de-paquets-de-base-pour-docker)
     - [Ajout du dépôt Docker](#ajout-du-dépôt-docker)
   - [Création du conteneur](#création-du-conteneur)
-  - [Préparation et configuration du conteneur](#préparation-et-configuration-du-conteneur)
+  - [Préparation du FTP dans le conteneur](#préparation-du-ftp-dans-le-conteneur)
     - [Installation des paquets de base du conteneur](#installation-des-paquets-de-base-du-conteneur)
     - [Configuration](#configuration)
       - [Création d'un utilisateur `ftp` sans droits](#création-dun-utilisateur-ftp-sans-droits)
@@ -15,13 +15,13 @@
 
 ## Installation de Debian
 
-![](debian-logo.png)
+![](img/debian-logo.png)
 
 Suivre la procédure d'installation de Debian de base, non graphique avec simplement un serveur SSH et les dossiers `/var`, par exemple; séparés.
 
 ## Installation de Docker sur le serveur
 
-![](docker-logo.png)
+![](img/docker-logo.png)
 
 ### Mise à jour et installation de paquets de base pour Docker
 
@@ -48,15 +48,15 @@ echo \
 $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 ```
 
-Installer les paquets Docker:
-`
+Enfin, installer les paquets Docker:
+
     apt update
     apt install docker-ce docker-ce-cli containerd.io
 
 
 ## Création du conteneur
 
-![](container-icon.png)
+![](img/container-icon.png)
 
 
 Télécharger la dernière version de l'image Debian pour Docker:
@@ -76,7 +76,7 @@ On pourra se connecter sur notre conteneur et continuer la préparation avec la 
     docker exec -it web-server bash
 
 
-## Préparation et configuration du conteneur
+## Préparation du FTP dans le conteneur
 
 ### Installation des paquets de base du conteneur
 Une fois dans le conteneur, mettre à jour la liste des paquets et installer `nginx`, `vsftpd` ainsi que `nano` pour éditer les fichiers: 
@@ -88,7 +88,7 @@ Une fois dans le conteneur, mettre à jour la liste des paquets et installer `ng
 
 ### Configuration
 
-Utiliser les fichiers de configurations suivants pour nginx et vsftpd:
+Utiliser les fichiers de configurations suivants pour nginx et vsftpd
 
 #### Création d'un utilisateur `ftp` sans droits
 
