@@ -7,10 +7,15 @@
     - [Serveur Rennes (`rennes-svr`)](#serveur-rennes-rennes-svr)
     - [Serveur DMZ (`SERVEUR-DMZ`)](#serveur-dmz-serveur-dmz)
     - [Ferme Proxmox](#ferme-proxmox)
+    - [FTP](#ftp)
+    - [DHCP](#dhcp)
+    - [Active Directory](#active-directory)
+    - [PHP My Admin](#php-my-admin)
+    - [Serveur Mail](#serveur-mail)
   - [Switches et routeurs](#switches-et-routeurs)
 - [Mise en place du conteneur HTTP + FTP](#mise-en-place-du-conteneur-http--ftp)
-  - [Installation de Debian](#installation-de-debian)
-  - [Installation de Docker sur le serveur](#installation-de-docker-sur-le-serveur)
+  - [Prérequis](#prérequis)
+  - [Installation de Docker sur Debian 10](#installation-de-docker-sur-debian-10)
     - [Mise à jour et installation de paquets de base pour Docker](#mise-à-jour-et-installation-de-paquets-de-base-pour-docker)
     - [Ajout du dépôt Docker](#ajout-du-dépôt-docker)
   - [Création du conteneur](#création-du-conteneur)
@@ -23,7 +28,7 @@
   - [Préparation de Nginx dans le conteneur](#préparation-de-nginx-dans-le-conteneur)
 - [Configurer un serveur DHCP sur Debian 10](#configurer-un-serveur-dhcp-sur-debian-10)
   - [Kézako ?](#kézako-)
-  - [Prérequis](#prérequis)
+  - [Prérequis](#prérequis-1)
   - [Installation d'ISC DHCP Server:](#installation-disc-dhcp-server)
   - [Indiquer l'interface réseau à utiliser](#indiquer-linterface-réseau-à-utiliser)
   - [Spécifier les options du DHCP](#spécifier-les-options-du-dhcp)
@@ -67,6 +72,15 @@ Nous avons choisi d'utiliser le nom de domaine `ggp.local`
 
 ![](adressage.svg)
 
+Connectivité entre les différents matériels:
+
+- RG1 à RW1 PORT SERIAL 1 ↔ PORT SERIAL 0
+- RG2 à RW1 PORT SERIAL 0 ↔ PORT SERIAL 1
+- RW1 à RW2 PORT FA 0/0 ↔ PORT GI 0/1
+- RW2 à RR1 PORT GI 0/0 ↔ PORT FA 0/1
+- RR1 à SR1 PORT FA0/0 ↔ FA 0/1-24
+- RG1 à SG1 PORT FA 0/0 ↔ FA0/1-24 
+
 ## Solutions choisies
 
 Nos solutions tournent sur un mix de machines virtuelles, de conteneurs et de bare-metal.
@@ -75,15 +89,15 @@ Nos machines virtuelles tournent sur une ferme Proxmox tandis que nos conteneurs
 
 Nous avons choisi d'utiliser Debian la majorité du temps car considéré comme "standard". 
 
-|Service|Serveur|Environnement d'exécution|OS / Image|
-|---|---|---|---|
-|Active Directory + DNS||Proxmox 6.4 (VM)|Windows Server 2019|
-|Mail||Proxmox 6.4 (VM)|Debian 10|
-|DHCP||Proxmox 6.4 (VM)|Debian 10|
-|HTTP + FTP||Conteneur Docker 20.x (Serveur Debian 10)|Image Debian 10|
-|Base de données||Bare-metal|Debian 10|
-|Extranet||Bare-metal|Debian 10|
-|Pare-feu||Bare-metal|PfSense (FreeBSD)|
+|Service|Serveur|Solution|Environnement d'exécution|OS / Image|IP/masque
+|---|---|---|---|---|---|
+|Active Directory + DNS|||Proxmox 6.4 (VM)|Windows Server 2019||
+|Mail|||Proxmox 6.4 (VM)|Debian 10||
+|DHCP||ISC|Proxmox 6.4 (VM)|Debian 10||
+|HTTP + FTP||Nginx + Vsftpd|Conteneur Docker 20.x (Serveur Debian 10)|Image Debian 10||
+|Base de données||MariaDB|Bare-metal|Debian 10||
+|Extranet|||Bare-metal|Debian 10||
+|Pare-feu||PfSense 2.5.1 |Bare-metal|PfSense 2.5.1 (FreeBSD)||
 
 ---
 
@@ -116,6 +130,36 @@ Le nom entre parethèses correspond au hostname du serveur ou de l'équipement.
 |---|---|
 |root|admin|
 
+### FTP
+
+| User | Password |
+|---|---|
+|usertest|test|
+
+### DHCP
+
+| User | Password |
+|---|---|
+|admin-dhcp||
+
+### Active Directory
+
+| User | Password |
+|---|---|
+|Administrateur|Sio1$|
+|client1|Test123!|
+|client2|Test123!|
+|client3|Test123!|
+
+### PHP My Admin
+
+
+### Serveur Mail
+
+| User | Password |
+|---|---|
+|root|root|
+
 
 ## Switches et routeurs
 |Connexion|Mot de passe|
@@ -127,19 +171,20 @@ Le nom entre parethèses correspond au hostname du serveur ou de l'équipement.
 
 # Mise en place du conteneur HTTP + FTP
 
-## Installation de Debian
+## Prérequis
 
-![](img/debian-logo.png)
+- Installation Debian fonctionnelle
+- Configuration et/ou interface réseau fonctionnelle avec un accès à Internet
 
-Suivre la procédure d'installation de Debian de base, non graphique avec simplement un serveur SSH et les dossiers `/var`, par exemple; séparés.
-
-## Installation de Docker sur le serveur
+## Installation de Docker sur Debian 10
 
 ![](img/docker-logo.png)
 
+Docker ne se trouvant malheureusement pas dans les dépôts officiels Debian, il faut manuellement ajouter le dépôt et un certain nombre de dépendances pour pouvoir y télécharger les paquets nécessaires.
+
 ### Mise à jour et installation de paquets de base pour Docker
 
-Une fois l'installation de Debian sans GUI complétée, se connecter avec le compte mettre à jour la liste des paquets et les paquets:
+Mettre à jour les paquets et la liste des paquets:
 
     apt update
     apt upgrade
@@ -260,8 +305,7 @@ Optionnellement, il peut distribuer l'adresse d'un serveur DNS, mais aussi une p
 
 - Installation Debian fonctionnelle
 - Configuration et/ou interface réseau fonctionnelle avec un accès à Internet
-- Accès Root 
-Pour l'avoir, taper simplement: `su` (super user) suivi du mot de passe du compte root.
+- Accès Root
 
 > Avant d'éditer chaque fichier, nous en ferons une sauvegarde afin de pouvoir retrouver un fichier exploitable en cas de pepin.  
 > Nous ferons simplement une copie du fichier en rajoutant un `.old` à la fin du nom de ce dernier
