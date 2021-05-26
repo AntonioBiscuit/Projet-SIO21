@@ -74,6 +74,8 @@
 - [PfSense](#pfsense)
   - [Installation de PfSense](#installation-de-pfsense)
   - [Configuration de PfSense](#configuration-de-pfsense)
+  - [Configuration du VPN :](#configuration-du-vpn-)
+  - [Configuration du client :](#configuration-du-client-)
 - [Fichiers de configuration](#fichiers-de-configuration)
   - [Routeurs](#routeurs)
   - [Switches](#switches)
@@ -1170,14 +1172,150 @@ On choisi notre AC que l’on vient de créer précedemment :
 ![](img/PfSense/image30.png)
 On laisse le reste par défaut et on peut enregistrer.
 
-Maintenant que notre serveur proxy est en place on va configurer l’authentification au proxy. 
+Maintenant que notre serveur proxy est en place on va configurer l’authentification au proxy dans `Proxy server/authentication`
 
-Proxy server / authentication
+On va utiliser la methode d’authentification locale de facon à ce que ce soient les utilisateurs renseignés dans la base de données locale de pfsense qui puissent s’authentifier : 
 
-On va utiliser la methode d’authentification local de facon à ce que ce soient les utilisateurs renseignés dans la base de données locale de pfsense qui puissent s’authentifier : 
+![](img/PfSense/image21.png)
+
+On laisse le reste par défaut et on enregistre.
+
+On va maintenant créer des utilisateurs qui vont pouvoir se connecter au proxy.
+
+Se rendre dans `proxy server / users` et ajouter
+
+![](img/PfSense/image22.png)
+
+On créer maintenant notre utilisateur souhaité :
+
+![](img/PfSense/image23.png)
+
+Puis on enregistre. 
+
+Maintenant que tous les paramètres requis pour le proxy sont opérationels, on va pouvoir tester avec notre client.
+
+![](img/PfSense/image24.png)
+
+Le proxy est fonctionel.
+
+
+## Configuration du VPN : 
+
+Installer le package `openvpn-client-export` Puis se rendre dans `VPN / open-vpn`.
+
+![](img/PfSense/image25.png)
+
+Puis dans l’onglet `serveur` Cliquer sur ajouter
+
+![](img/PfSense/image26.png)
+
+On active l’authentification SSL/TLS + authentification utilisateur locaux 
+
+On définit l’interface sur laquelle pfsense recevra les connections des clients 
+
+Et on attribue un port pour les connections entrantes des clients :
+
+![](img/PfSense/image27.png)
+
+On attribue notre AC au serveur VPN:
+
+![](img/PfSense/image28.png)
+
+Et on va aller crer un certificat serveur dans Système / gestionnaire de certificat / certificat 
+Puis on va en ajouter un : 
+
+![](img/PfSense/image29.png)
+
+On va definir un nom au certificat:
+
+![](img/PfSense/image30.png)
+
+Puis definir le type de certificat:
+
+![](img/PfSense/image20.png)
+
+On peut enregister et retourner dans la configuration du serveur vpn. 
+Maintenant notre certificat pour le serveur créer on va l’ajouter : 
+
+![](img/PfSense/image12.png)
+
+Créer le tunnel en lui attribuant l’addresse de réseaux souhaité :
+
+![](img/PfSense/image13.png)
+
+On specifie notre réseaux LAN :
+
+![](img/PfSense/image14.png)
+
+On laisse tout les autres parametres par défaut et on enregistre.
+
+
+## Configuration du client : 
+    
+Ajouter l’ip du serveur VPN et le port :
+
+![](img/PfSense/image15.png)
+
+Ajouter le serveur proxy si un serveur proxy est configuré :
+
+![](img/PfSense/image16.png)
+
+On associe un utilisateur au client vpn : 
+
+![](img/PfSense/image17.png)
+
+On ajoute notre autorité de certification :
+
+![](img/PfSense/image18.png)
+
+On va devoir retourner créer un certificat pour notre client VPN dans :
+`Système / Gestionnaire de certificat / Certificat`
+
+On donne un nom au certificat et on le lie a notre autorité de certification : 
+
+![](img/PfSense/image19.png)
+
+Puis on determine le type de certificat sur users :
+
+![](img/PfSense/image20.png)
+
+On peut enregistrer et retourner sur la configuration du client afin d’ajouter le certificat que l’on vient de créer :
+
+![](img/PfSense/image1.png)
+
+On specifie notre réseaux virtuel : 
 
 ![](img/PfSense/image3.png)
 
+En bas de page on a la possibilité de télécharge notre client vpn : 
+
+On va cliquer sur archive afin de télécharger l’ensemble des fichiers nécessaires à la connection VPN.
+
+![](img/PfSense/image4.png)
+
+On va ajouter notre configuration au logiciel Open-vpn afin de tester notre connection VPN.
+
+`Barre des taches /application open / vpn / importer fichier`
+
+![](img/PfSense/image5.png)
+
+On va venir sélectionner notre fichier .OVPN qui est notres fichier de configurations.
+
+![](img/PfSense/image6.png)
+
+Une fois que notre fichier a été importé avec succés on va pouvoir se connecter.
+
+![](img/PfSense/image7.png)
+
+On renseigne nos identifiants et on se connecte : 
+
+![](img/PfSense/image8.png)
+
+Notre vpn est maintenant connecté : 
+
+![](img/PfSense/image9.png)
+
+Notre infrastructure est sécurisée grâce à l’ajout d’un pare feu après la connexion WAN. On a ajouté un serveur proxy qui nous permet de monitorer l’usage des utilisateurs et de créer un VPN qui nous permet de travailler a distance sur notre réseau local.
 
 # Fichiers de configuration
 
