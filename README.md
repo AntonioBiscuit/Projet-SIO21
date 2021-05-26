@@ -71,6 +71,9 @@
   - [Configuration de dovecot](#configuration-de-dovecot)
   - [Mise en place de la liaison Postfix <-> Dovecot](#mise-en-place-de-la-liaison-postfix---dovecot)
   - [Installation et configuration de Rainloop](#installation-et-configuration-de-rainloop)
+- [PfSense](#pfsense)
+  - [Installation de PfSense](#installation-de-pfsense)
+  - [Configuration de PfSense](#configuration-de-pfsense)
 - [Fichiers de configuration](#fichiers-de-configuration)
   - [Routeurs](#routeurs)
   - [Switches](#switches)
@@ -1093,6 +1096,87 @@ Nous avons bien reçu le message de informatique@ent.lan !
 
 Nous disposons d’un serveur de messagerie fonctionnel grâce à Postfix et Dovecot et du webmail Rainloop pour que nos utilisateurs puissent consulter leurs mails !
 
+
+# PfSense
+
+## Installation de PfSense
+
+![](img/PfSense/image31.png)
+
+![](img/PfSense/image33.png)
+
+![](img/PfSense/image32.png)
+
+![](img/PfSense/image35.png)
+
+![](img/PfSense/image34.png)
+
+![](img/PfSense/image37.png)
+
+Assigner une IP du côté LAN:
+
+![](img/PfSense/image40.png)
+
+![](img/PfSense/image39.png)
+
+![](img/PfSense/image38.png)
+
+![](img/PfSense/image42.png)
+
+![](img/PfSense/image40.png)
+
+L'interface LAN est maintenant configurée.
+
+
+## Configuration de PfSense
+
+![](img/PfSense/image41.png)
+
+![](img/PfSense/image43.png)
+
+Régles de filtrage :
+
+Dans pare feu / regles on  va pouvoir modifier nos regles de pare feu pour activer certain services ou les desactiver , ouvrir des ports ou les fermer.
+
+![](img/PfSense/image44.png)
+
+Création d’une autorité de certificat : `Système / gestionnaire de certificat`:
+
+![](img/PfSense/image45.png)
+
+Ajouter une AC:
+
+![](img/PfSense/image46.png)
+
+On va lui donner un nom et laisser les autres parametres par défaut puis enregistrer. 
+
+![](img/PfSense/image47.png)
+
+Configuration du serveur proxy:
+
+Activer squid proxy :
+
+Choisir l’interface ou le proxy va agir et laisser le port par défaut (3128) :
+
+![](img/PfSense/image48.png)
+
+On a la possibilité de choisir ou non si on veut utiliser un proxy en mode transparent. 
+Je laisse le proxy en non transparent : 
+
+![](img/PfSense/image49.png)
+
+On choisi notre AC que l’on vient de créer précedemment :
+
+![](img/PfSense/image30.png)
+On laisse le reste par défaut et on peut enregistrer.
+
+Maintenant que notre serveur proxy est en place on va configurer l’authentification au proxy. 
+
+Proxy server / authentication
+
+On va utiliser la methode d’authentification local de facon à ce que ce soient les utilisateurs renseignés dans la base de données locale de pfsense qui puissent s’authentifier : 
+
+![](img/PfSense/image3.png)
 
 
 # Fichiers de configuration
