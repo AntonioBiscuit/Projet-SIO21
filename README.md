@@ -57,13 +57,13 @@
       - [Étapes dans l'ordre](#étapes-dans-lordre-1)
       - [Exemple](#exemple)
 - [VPN site à site](#vpn-site-à-site)
-  - [Créer la policy :](#créer-la-policy-)
-  - [Créer et configurer la Crypto-Map](#créer-et-configurer-la-crypto-map)
-  - [Sélectionner l’interface du routeur côté WAN qu’on va utiliser pour créer le tunnel](#sélectionner-linterface-du-routeur-côté-wan-quon-va-utiliser-pour-créer-le-tunnel)
+  - [Objectif:](#objectif)
+    - [Créer la policy :](#créer-la-policy-)
+    - [Créer et configurer la Crypto-Map](#créer-et-configurer-la-crypto-map)
+    - [Sélectionner l’interface du routeur côté WAN à utiliser pour créer le tunnel](#sélectionner-linterface-du-routeur-côté-wan-à-utiliser-pour-créer-le-tunnel)
     - [Vérification de la création de la policy:](#vérification-de-la-création-de-la-policy)
     - [Vérification du chiffrement des échanges dans le tunnel:](#vérification-du-chiffrement-des-échanges-dans-le-tunnel)
     - [Vérification du chiffrement des données qui transitent par le Tunnel :](#vérification-du-chiffrement-des-données-qui-transitent-par-le-tunnel-)
-- [Proxmox](#proxmox)
 - [Active Directory](#active-directory-1)
   - [Prérequis](#prérequis-2)
     - [Changement de Hostname](#changement-de-hostname)
@@ -114,15 +114,15 @@ Nos machines virtuelles tournent sur une ferme Proxmox tandis que nos conteneurs
 
 Nous avons choisi d'utiliser Debian la majorité du temps car considéré comme "standard". 
 
-|Service|Serveur|Solution|Environnement d'exécution|OS / Image|IP/masque
-|---|---|---|---|---|---|
-|Active Directory + DNS||Windows Server 2019|Proxmox 6.4 (VM)|Windows Server 2019|172.16.200.3/24|
-|Mail|||Proxmox 6.4 (VM)|Debian 10|172.16.200.4/24|
-|DHCP||ISC|Proxmox 6.4 (VM)|Debian 10|172.16.200.2/24|
-|HTTP + FTP||Nginx + Vsftpd|Conteneur Docker 20.x (Serveur Debian 10)|Image Debian 10|172.16.201.1/24|
-|Base de données||MariaDB|Bare-metal|Debian 10|192.168.65.1/24|
-|Extranet|||Bare-metal|Debian 10|192.168.65.2/24|
-|Pare-feu||PfSense 2.5.1 |Bare-metal|PfSense 2.5.1 (FreeBSD)||
+|Service|Solution|Environnement d'exécution|OS / Image|IP/masque|
+|---|---|---|---|---|
+|Active Directory + DNS|Windows Server 2019|Proxmox 6.4 (VM)|Windows Server 2019|172.16.200.3/24|
+|Mail|Postfix 3.4.14; Dovecot 2.3.4.1; Rainloop 1.16.0|Proxmox 6.4 (VM)|Debian 10|172.16.200.4/24|
+|DHCP|ISC|Proxmox 6.4 (VM)|Debian 10|172.16.200.2/24|
+|HTTP + FTP|Nginx + Vsftpd|Conteneur Docker 20.x (Serveur Debian 10)|Image Debian 10|172.16.201.1/24|
+|Base de données|MariaDB|Bare-metal|Debian 10|192.168.65.1/24|
+|Extranet|Apache|Bare-metal|Debian 10|192.168.65.2/24|
+|Pare-feu|PfSense 2.5.1 |Bare-metal|PfSense 2.5.1 (FreeBSD)||
 
 ---
 
@@ -571,11 +571,13 @@ Attribuer une IP au routeur virtuel
 
 # VPN site à site
 
-Objectif : Créer un Tunnel VPN entre 2 routeurs localisés sur 2 sites différents (RG1 sur Guingamp et RR1 sur Rennes dans l’exemple).
+## Objectif: 
 
-## Créer la policy :
+Créer un Tunnel VPN entre 2 routeurs localisés sur 2 sites différents (RG1 sur Guingamp et RR1 sur Rennes dans l’exemple).
+
+### Créer la policy :
+
 En mode `configure terminal` sur un des routeurs concernés (RG2 dans l’exemple) :
-
 
     crypto isakmp policy 10 => l’identifiant de la policy
 
@@ -594,7 +596,7 @@ En mode `configure terminal` sur un des routeurs concernés (RG2 dans l’exempl
 
 ![](img/VPN/image3.png)
 
-## Créer et configurer la Crypto-Map
+### Créer et configurer la Crypto-Map
 
 Toujours en `configure terminal`:
 
@@ -614,7 +616,7 @@ Toujours en `configure terminal`:
 
 ![](img/VPN/image2.png)
 
-## Sélectionner l’interface du routeur côté WAN qu’on va utiliser pour créer le tunnel
+### Sélectionner l’interface du routeur côté WAN à utiliser pour créer le tunnel
 
 ![](img/VPN/image5.png)
 
@@ -648,7 +650,7 @@ En utilisant la commande `show crypto map` :
 
 > Dans l’exemple ci-dessus, on remarque que onze paquets ont été chiffrés.
 
-# Proxmox
+---
 
 # Active Directory
 
