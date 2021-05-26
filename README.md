@@ -56,6 +56,13 @@
     - [Configurer le protocole HSRP](#configurer-le-protocole-hsrp)
       - [Étapes dans l'ordre](#étapes-dans-lordre-1)
       - [Exemple](#exemple)
+- [VPN site à site](#vpn-site-à-site)
+  - [Créer la policy :](#créer-la-policy-)
+  - [Créer et configurer la Crypto-Map](#créer-et-configurer-la-crypto-map)
+  - [Sélectionner l’interface du routeur côté WAN qu’on va utiliser pour créer le tunnel](#sélectionner-linterface-du-routeur-côté-wan-quon-va-utiliser-pour-créer-le-tunnel)
+    - [Vérification de la création de la policy:](#vérification-de-la-création-de-la-policy)
+    - [Vérification du chiffrement des échanges dans le tunnel:](#vérification-du-chiffrement-des-échanges-dans-le-tunnel)
+    - [Vérification du chiffrement des données qui transitent par le Tunnel :](#vérification-du-chiffrement-des-données-qui-transitent-par-le-tunnel-)
 - [Proxmox](#proxmox)
 - [Active Directory](#active-directory-1)
   - [Prérequis](#prérequis-2)
@@ -561,6 +568,85 @@ Attribuer une IP au routeur virtuel
 ```
 
 ---
+
+# VPN site à site
+
+Objectif : Créer un Tunnel VPN entre 2 routeurs localisés sur 2 sites différents (RG1 sur Guingamp et RR1 sur Rennes dans l’exemple).
+
+## Créer la policy :
+En mode `configure terminal` sur un des routeurs concernés (RG2 dans l’exemple) :
+
+
+    crypto isakmp policy 10 => l’identifiant de la policy
+
+    encr aes => mode d’encryption
+    hash md5 => protocole de hashage de la signature
+
+    authentication pre-share 
+    
+    group 2 => longueur de la clé utilisée pour les échanges DH (1024 Bits)
+
+    lifetime 21600 => durée de vie du tunnel avant l’établissement d’une nouvelle connexion.
+
+    crypto isakmp key « clé » address « IP de l’interface WAN du routeur à l’autre extrémité du tunnel »
+
+    access-list « numéro de la liste de 1 à 99 : access-list standard de 100 à 199 : access-list étendue » permit ip « réseau local de départ/masque à l’envers réseau local de destination/masque à l’envers » permet de créer une liste pour autoriser que certains réseaux à transiter par le tunnel.
+
+![](img/VPN/image3.png)
+
+## Créer et configurer la Crypto-Map
+
+Toujours en `configure terminal`:
+
+    -crypto ipsec transform-set « Nom du transform-set » « méthode de chiffrement » « méthode d’authentification »
+
+    -mode tunnel
+
+    -exit
+
+    -crypto map « nom de la crypto map » « numéro de séquence » ipsec-isakmp
+
+
+    -match address « numéro de l’ACL »
+    -set transform-set « nom du transform-set »
+
+    -set peer « ip de l’interface WAN du routeur à l’autre extrémité »
+
+![](img/VPN/image2.png)
+
+## Sélectionner l’interface du routeur côté WAN qu’on va utiliser pour créer le tunnel
+
+![](img/VPN/image5.png)
+
+Une fois le Tunnel VPN configuré, il faut établir une connexion entre un client connecté sur le réseau local de Rennes et un client connecté sur le réseau local de Guingamp:
+
+![](img/VPN/image4.png)
+
+> On remarque que la connexion passe par la passerelle côté LAN du routeur Rennes, ensuite elle emprunte le tunnel VPN qui arrive par la passerelle côté WAN du routeur de Guingamp, puis elle arrive à destination du pc sur le réseau local de Guingamp.
+
+### Vérification de la création de la policy:
+
+![](img/VPN/image7.png)
+
+### Vérification du chiffrement des échanges dans le tunnel:
+
+![](img/VPN/image6.png)
+
+> On observe donc que la police numéro 10 a été créée avec l’algorithme AES 128 bits pour le chiffrement, le MD5 comme algorithme de hash, une méthode d’authentification par Pre­Shared Key, un groupe Diffie-Hellman de 2 (1024 bit), et une durée de vie de 21 600 secondes.
+
+En utilisant la commande `show crypto map` :
+
+![](img/VPN/image9.png)
+
+> Cette commande nous permet d’afficher un certain nombre de détails sur la crypto­map configurée, et l’interface sur laquelle elle a été appliquée. On y retrouve également les paramètres utilisés pour l’établissement du tunnel de la phase 2 du protocole IKE.
+
+### Vérification du chiffrement des données qui transitent par le Tunnel :
+
+    show crypto ipsec sa
+
+![](img/VPN/image8.png)
+
+> Dans l’exemple ci-dessus, on remarque que onze paquets ont été chiffrés.
 
 # Proxmox
 
