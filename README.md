@@ -19,7 +19,7 @@
     - [Mise à jour et installation de paquets de base pour Docker](#mise-à-jour-et-installation-de-paquets-de-base-pour-docker)
     - [Ajout du dépôt Docker](#ajout-du-dépôt-docker)
   - [Création du conteneur](#création-du-conteneur)
-  - [Préparation du FTP dans le conteneur](#préparation-du-ftp-dans-le-conteneur)
+  - [Installation de vsftpd dans le conteneur](#installation-de-vsftpd-dans-le-conteneur)
     - [Installation des paquets de base du conteneur](#installation-des-paquets-de-base-du-conteneur)
     - [Configuration](#configuration)
       - [Création d'un utilisateur `ftp` sans droits](#création-dun-utilisateur-ftp-sans-droits)
@@ -57,7 +57,20 @@
       - [Étapes dans l'ordre](#étapes-dans-lordre-1)
       - [Exemple](#exemple)
 - [Proxmox](#proxmox)
+- [Active Directory](#active-directory-1)
+  - [Prérequis](#prérequis-2)
+    - [Changement de Hostname](#changement-de-hostname)
+    - [Changement d'IP](#changement-dip)
+  - [Gestionnaire de serveur](#gestionnaire-de-serveur)
+  - [Configuration du contrôleur de domaine](#configuration-du-contrôleur-de-domaine)
   - [Connexion](#connexion)
+- [Serveur Mail](#serveur-mail-1)
+  - [Installation des paquets et préparation du système](#installation-des-paquets-et-préparation-du-système)
+  - [Installation et configuration de postfixadmin](#installation-et-configuration-de-postfixadmin)
+  - [Configuration de Postfix](#configuration-de-postfix)
+  - [Configuration de dovecot](#configuration-de-dovecot)
+  - [Mise en place de la liaison Postfix <-> Dovecot](#mise-en-place-de-la-liaison-postfix---dovecot)
+  - [Installation et configuration de Rainloop](#installation-et-configuration-de-rainloop)
 - [Fichiers de configuration](#fichiers-de-configuration)
   - [Routeurs](#routeurs)
   - [Switches](#switches)
@@ -91,12 +104,12 @@ Nous avons choisi d'utiliser Debian la majorité du temps car considéré comme 
 
 |Service|Serveur|Solution|Environnement d'exécution|OS / Image|IP/masque
 |---|---|---|---|---|---|
-|Active Directory + DNS|||Proxmox 6.4 (VM)|Windows Server 2019||
-|Mail|||Proxmox 6.4 (VM)|Debian 10||
-|DHCP||ISC|Proxmox 6.4 (VM)|Debian 10||
-|HTTP + FTP||Nginx + Vsftpd|Conteneur Docker 20.x (Serveur Debian 10)|Image Debian 10||
-|Base de données||MariaDB|Bare-metal|Debian 10||
-|Extranet|||Bare-metal|Debian 10||
+|Active Directory + DNS||Windows Server 2019|Proxmox 6.4 (VM)|Windows Server 2019|172.16.200.3/24|
+|Mail|||Proxmox 6.4 (VM)|Debian 10|172.16.200.4/24|
+|DHCP||ISC|Proxmox 6.4 (VM)|Debian 10|172.16.200.2/24|
+|HTTP + FTP||Nginx + Vsftpd|Conteneur Docker 20.x (Serveur Debian 10)|Image Debian 10|172.16.201.1/24|
+|Base de données||MariaDB|Bare-metal|Debian 10|192.168.65.1/24|
+|Extranet|||Bare-metal|Debian 10|192.168.65.2/24|
 |Pare-feu||PfSense 2.5.1 |Bare-metal|PfSense 2.5.1 (FreeBSD)||
 
 ---
@@ -235,7 +248,7 @@ On pourra se connecter sur notre conteneur et continuer la préparation avec la 
     docker exec -it web-server bash
 
 
-## Préparation du FTP dans le conteneur
+## Installation de vsftpd dans le conteneur
 
 ### Installation des paquets de base du conteneur
 Une fois dans le conteneur, mettre à jour la liste des paquets et installer `nginx`, `vsftpd` ainsi que `nano` pour éditer les fichiers: 
@@ -546,6 +559,100 @@ Attribuer une IP au routeur virtuel
 
 # Proxmox
 
+# Active Directory
+
+## Prérequis
+
+- Installation Windows Server 2019 fonctionnelle
+- Configuration et/ou interface réseau fonctionnelle avec un accès à Internet
+
+### Changement de Hostname
+
+Taper dans la barre de recherche Windows `sysdm.cpl` et changer le nom de l'ordinateur (hostname) dans le champ surligné:
+
+![](img/AD/domainhostname.png)
+
+### Changement d'IP
+
+Modifier les paramètres de la carte dans le centre réseau et partage:
+
+![](img/AD/réseau%20et%20partage.png)
+
+Sélectionner la carte réseau à configurer et choisir propriétés:
+
+![](img/AD/Connexions.png)
+
+Aller dans la section IPv4:
+
+![](img/AD/Proprietes%20carte.png)
+
+Et enfin, configurer l'adresse IP avec le masque correspondant **sans oublier de cocher la case `valider en quittant`**:
+
+![](img/AD/IPv4.png)
+
+
+## Gestionnaire de serveur
+
+Nous allons maintenant pouvoir ajouter à notre serveur les rôles qui nous intéressent. Dans le Gestionnaire de serveur, se rendre dans `Gérer -> Ajouter des rôles et fonctionnalités` (barre du haut en gris): 
+
+![](img/AD/Gestionnaire-serveur.png)
+
+Choisir l'installation basée sur un rôle ou une fonctionnalité:
+
+![](img/AD/installation-fonctionnalite.png)
+
+Choisir où installer la fonctionnalité:
+
+![](img/AD/Destination-installation.png)
+
+Installer les rôles:
+- DNS
+- AD DS
+- Service de certificats Active Directory
+
+![](img/AD/selection-roles.png)
+
+Nous n'aurons pas besoin d'installer de fonctionnalités optionnelles pour notre utilisation:
+
+## Configuration du contrôleur de domaine
+
+Retourner dans le gestionnaire de serveur et cliquer sur le drapeau avec le pictogramme puis sur *"Promouvoir ce serveur en contrôleur de domaine"* :
+
+![](img/AD/promouvoir.png)
+
+Ajouter une nouvelle forêt et créer un nouveau nom de domaine:
+
+![](img/AD/foret.png)
+
+Spécifier nos fonctionnalités de contrôleur de domaine et ajouter un mot de passe au mode de restauration des services d’annuaire :
+
+![](img/AD/options-controleur-domaine.png)
+
+Cliquer sur suivant : la délégation DNS sera créée plus tard:
+
+![](img/AD/delegation-dns.png)
+
+Changer le nom NETBIOS du domaine:
+
+![](img/AD/netbios.png)
+
+Possibilité de changer le chemin d'accès des bases de données, logs...
+
+![](img/AD/destination.png)
+
+Recapitulatif avant d'installer:
+
+![](img/AD/recap.png)
+
+Cliquer sur installer:
+
+![](img/AD/confirm-install.png)
+
+Avertissement avant de redémarrer
+
+![](img/AD/reboot-prompt.png)
+
+La configuration de l'Active Directory est maintenant terminée.
 
 ## Connexion
 
@@ -554,6 +661,439 @@ L'adresse permettant de se connecter à l'interface web de Proxmox est la suivan
 Le `https` est **nécessaire** pour se connecter !
 
 ---
+
+# Serveur Mail
+
+Solutions et versions utilisées:
+- Postfix :     V3.4.14
+- Dovecot :  V2.3.4.1
+- Rainloop : V1.16.0
+
+## Installation des paquets et préparation du système
+ 
+ 
+Mise à jour des paquets:
+
+    apt update
+    apt upgrade
+ 
+Installer les services de base de ce qu’on appelle une pile « LAMP » (Linux Apache Mysql PHP) :
+ 
+    apt install apache2 mariadb-server php7.0 -y
+ 
+On continue par installer toutes les dépendances de php7.0 dont nous allons avoir besoin par la suite et on redémarre le service apache2 pour la prise en compte de ces dépendances :
+ 
+    apt install php7.0-mysql php7.0-mbstring php7.0-imap php7.0-xml php7.0-curl -y
+    
+    service apache2 restart
+ 
+On poursuit avec deux petits utilitaires qu’on utilisera pour le test final :
+ 
+    apt install tree mailutils -y
+ 
+On installe Postfix :
+ 
+    apt install postfix postfix-mysql -y 
+ 
+Pendant l’installation, choisir le mode "Site Internet" et saisir le nom de votre domaine ou encore le nom complet du serveur de messagerie (nom+domaine) en tant que "Nom de courrier".
+
+![](img/Mail/image15.png)
+
+Et enfin, on installe Dovecot :
+ 
+    apt-get install dovecot-mysql dovecot-pop3d dovecot-imapd dovecot-managesieved -y
+ 
+On va également créer sur le serveur un groupe+utilisateur local nommé ici « vmail » qui sera chargé de gérer les emails. Son « home directory » sera défini sur /var/vmail et contiendra par la suite l’ensemble des mails reçus par le serveur.
+ 
+    Groupadd -g 5000 vmail
+    Useradd -g vmail -u 5000 vmail -d /var/vmail -m
+
+On va passer à l’installation et la configuration de Postfixadmin. 
+
+
+## Installation et configuration de postfixadmin 
+ 
+ 
+Comme exposé en introduction, les comptes de messagerie seront virtuels. Pour administrer ses comptes de façon graphique, nous allons utiliser l’interface web du service Postfix appelée PostfixAdmin.
+ 
+Avant de procéder à l’installation, nous allons préparer la base de données nécessaires au bon fonctionnement. Avant tout, si ce n’est pas déjà le cas, on va sécuriser mysql en définissant au compte root un mot de passe pour s’y connecter :
+
+    mysql_secure_installation
+ 
+Une série de question vous sera alors posée. La 1ère vous demandera de saisir le mot de passe actuel pour root. Nous n’en avons pas, appuyez juste sur la touche Entrée.
+
+![](img/Mail/image12.png)
+
+Ensuite on vous demande « Set root password ? [Y/n] ». Appuyez de nouveau sur la touche Entrée pour répondre « Oui » (Y = Yes) et définir un mot de passe pour l’utilisateur root (2 fois).
+
+![](img/Mail/image11.png)
+
+Pour toutes les questions qui suivront, appuyez sur Entrée pour valider.
+
+Connectez-vous à mariadb et saisissez le mot de passe fraîchement défini pour root :
+
+    mariadb -u root -p
+
+On commence par créer une base de données que j’ai appelé ici « postfix » :
+ 
+    CREATE DATABASE postfix;
+
+Ensuite, on crée un utilisateur, appelé postfix, et on lui attribue un mot de passe.
+ 
+    CREATE USER 'postfix'@'localhost' IDENTIFIED BY 'choose_a_password';
+ 
+Et ensuite, je donne à mon nouvel utilisateur « postfix », les pleins pouvoirs sur la base de données qui porte son nom.
+ 
+    GRANT ALL PRIVILEGES ON `postfix` . * TO 'postfix'@'localhost';
+ 
+Pour des raisons de sécurité, nous utiliserons (plus tard dans ce tuto) plutôt un autre utilisateur pour accéder à la base de données `postfix` et qui n’aura que le droit de lecture. Ce compte se nommera « mailuser ». Je le crée et lui donne les droits nécessaires :
+ 
+    CREATE USER 'mailuser'@'localhost' IDENTIFIED BY 'choose_a_password';
+    GRANT SELECT ON `postfix`.* TO 'mailuser'@'localhost';
+ 
+La base de données est prête. On applique les nouveaux privilèges et nous pouvons quitter MariaDB :
+
+    FLUSH PRIVILEGES;
+    QUIT ;
+
+On peut désormais installer Postfixadmin. Se placer dans le répertoire `/srv/`, télécharger l’archive nécessaire et la décompresser :
+ 
+    cd /srv/
+    wget -O postfixadmin.tgz https://github.com/postfixadmin/postfixadmin/archive/postfixadmin-3.2.tar.gz
+    tar -zxvf postfixadmin.tgz
+
+Déplacez le contenu de l’archive décompressée dans un dossier appelé `postfixadmin`. S’il n’existe pas déjà dans `/srv`, il sera créé :
+ 
+    mv postfixadmin-postfixadmin-3.2 postfixadmin
+ 
+Créez un lien symbolique de notre dossier postfixadmin dans `/var/www/html/postfixadmin` :
+ 
+    ln -s /srv/postfixadmin/public /var/www/html/postfixadmin
+ 
+Maintenant, on va définir notre configuration. Créez un fichier nommé `config.local.php`.
+ 
+    nano /srv/postfixadmin/config.local.php
+ 
+Insérer dans ce fichier le texte suivant sans oubliez d’adapter selon l’utilisateur que vous avez créé, le mot de passe que vous lui avez attribué et le nom de base de données défini :
+
+```PHP
+<?php
+$CONF['database_type'] = 'mysqli';
+$CONF['database_host'] = 'localhost';
+$CONF['database_name'] = 'postfix';
+$CONF['database_user'] = 'postfix';
+$CONF['database_password'] = 'choose_a_password';
+
+$CONF['configured'] = true;
+?>
+```
+Toujours dans notre dossier postfixadmin, créez un dossier nommé `templates_c` et rendez l’utilisateur `www-data` (user spécifique du service web) propriétaire de ce dossier et de tout ce qu’il s’y trouvera. Ce répertoire est nécessaire pour la bonne exécution du setup de Postfixadmin.
+
+    mkdir -p /srv/postfixadmin/templates_c
+    chown -R www-data /srv/postfixadmin/templates_c
+
+On peut maintenant lancer le setup. Depuis le navigateur internet d’un poste client sur le même réseau, rendez-vous à l’adresse suivante (en adaptant le nom serveur.domaine bien sur) :
+
+http://srv-mail.ent.lan/postfixadmin/setup.php
+
+Une série de tests sera alors lancée et si vous avez des erreurs, vous devrez les corriger pour poursuivre.
+
+![](img/Mail/image14.png)*
+
+> La plupart des erreurs que j’ai eu sont dues à des dépendances de php7.0 oubliées (multibyte string, IMAP functions etc…) ou bien le service apache qui n’a pas été redémarré et n’a donc pas pris en compte les modifications, des erreurs d’écriture dans le dossier template_c, ou l’ajout de « mysql » au lieu de « mysqli » dans le fichier config.local.php…
+
+
+
+![](img/Mail/image13.png)
+
+Le mot de passe que vous avez défini sera alors crypté.
+
+![](img/Mail/image17.png)
+
+Il faut copier TOUTE LA LIGNE FOURNIE et la coller dans le fichier `config.local.php` du serveur entre les 2 balises de php 
+
+> Grosse pensée pour ceux qui ne se sont pas connectés en ssh au serveur depuis le client et qui vont devoir tout saisir à la main…
+
+![](img/Mail/image16.png)
+
+Ensuite on va vous demander de créer un compte pour se connecter à l’interface phpmyadmin.
+Saisissez de nouveau le mot de passe du setup que vous avez défini juste avant. Créer un compte du type admin@votredomaine, lui attribuer un password et cliquez sur Ajouter un administrateur.
+
+![](img/Mail/image21.png)
+
+Une fois le compte d’administration créé, vous aurez le message suivant :
+
+![](img/Mail/image19.png)
+
+Vous pouvez désormais vous connectez à l’interface web Postfixadmin à l’adresse suivante :
+ 
+http://srv-mail.ent.lan/postfixadmin/login.php
+
+![](img/Mail/image24.png)
+
+Voici un aperçu de la console d’administration :
+
+![](img/Mail/image22.png)
+
+Nous allons ajouter notre domaine. Cliquez sur « Liste des domaines » et « Nouveau domaine » dans les onglets en haut de la page :
+
+![](img/Mail/image23.png)
+
+Ajoutez votre domaine et définir le nombre d’alias et de comptes courriers sur 0 pour pouvoir 
+en créer en illimité.
+
+![](img/Mail/image25.png)
+
+On peut maintenant créer nos adresses de messagerie. Cliquez sur "Liste des virtuels" et "Ajouter un compte courrier" dans les onglets en haut de la page.
+
+![](img/Mail/image26.png)
+
+Créer 2 boîtes utilisateurs qui devront s’échanger des mails. Le nom d’utilisateur sera celui utilisé dans l’adresse mail devant le @domaine. Le nom sera celui affiché pour les échanges entre utilisateurs. Vous pouvez définir une limite de taille pour la boîte de l’utilisateur (oui j’ai mis 10Mo car je suis super radine !). Veillez à bien cocher la case Actif et cliquez sur Ajouter le compte courriel. Refaites la manipulation pour un second utilisateur.
+
+![](img/Mail/image27.png)
+
+Voilà pour la partie gestion des adresses mails ! Maintenant, nous allons procéder à la configuration de Postfix sur le serveur.
+
+## Configuration de Postfix
+
+Pour rappel, Postfix est le logiciel de messagerie chargé de la livraison des emails. Il faut lier Postfix à la base de données afin que les utilisateurs puissent échanger des messages.
+On va commencer par donner accès au domaine à postfix. Dans /etc/postfix, créez un fichier nommé « mysql-virtual-mailbox-domains.cf » et y insérer le contenu suivant :
+
+    user=mailuser
+    password=choose_a_password
+    hosts=127.0.0.1
+    dbname=postfix
+    query=SELECT 1 FROM domain where domain='%s'
+
+Ce fichier va permettre à Postfix, quand il reçoit un mail destiné à user@ent.lan, de déterminer si notre serveur est bien en charge du domaine ent.lan. Il faut qu’en exécutant la requête (définie à la ligne “query”), un élément quelconque soit retourné.
+Si rien n’est retourné à l’exécution de la requête, cela signifie que le domaine n’est pas présent et que le serveur devra transmettre la demande à un autre serveur de messagerie.
+Activez la configuration avec la commande suivante :
+ 
+    postconf -e virtual_mailbox_domains=mysql:/etc/postfix/mysql-virtual-mailbox-domains.cf
+
+On va tester si la recherche du domaine « ent.lan » fonctionne bien avec la commande ci-dessous :
+ 
+    postmap -q ent.lan mysql:/etc/postfix/mysql-virtual-mailbox-domains.cf
+ 
+Son retour devra afficher la valeur 1 pour indiquer que le domaine « ent.lan » est bien trouvé.
+Ensuite on va vérifier si la boîte mail existe, comme pour le domaine. Créez cette fois-ci le fichier `mysql-virtual-mailbox-maps.cf` dans `/etc/postfix` et y insérer les lignes suivantes :
+ 
+    user=mailuser
+    password=choose_a_password
+    hosts=127.0.0.1
+    dbname=postfix
+    query=SELECT 1 FROM mailbox where username='%s'
+ 
+On active avec la commande :
+
+    postconf -e virtual_mailbox_maps=mysql:/etc/postfix/mysql-virtual-mailbox-maps.cf
+
+Et on teste, comme pour le domaine, si la boîte `informatique@ent.lan` créé précédemment existe.
+
+    postmap -q informatique@ent.lan mysql:/etc/postfix/mysql-virtual-mailbox-maps.cf
+
+Son retour devra afficher la valeur 1 pour indiquer que l’adresse mail est bien trouvée.
+
+Postfix trouve bien le domaine `ent.lan` et également les boîtes mails créées. Passons à la configuration de Dovecot.
+
+## Configuration de dovecot
+
+Maintenant qu’on arrive à faire circuler les mails sur notre serveur, et qu’on les arrête quand ils sont pour nous, il faut pouvoir les récupérer pour les mettre dans des dossiers. C’est le rôle de Dovecot.
+ 
+Placez-vous dans le dossier `/etc/dovecot/conf.d/`. Le premier fichier à modifier est `10-auth.conf`. La ligne `auth_mechanisms` doit avoir comme valeur `plain login`.
+
+![](img/Mail/image28.png)
+
+Ensuite, tout à la fin de ce même fichier, il faut dire à Dovecot qu’il doit utiliser des utilisateurs en base de données et non ceux du système. Il faut pour cela commenter, c’est-à-dire ajouter le symbole # devant la ligne `! include auth-system` et décommenter, supprimer le symbole # devant la ligne `! include auth-sql`
+
+![](img/Mail/image29.png)
+
+Modifiez le fichier `auth-sql.conf.ext`. Recherchez le bloc « userdb » et remplacez les informations par celles-ci :
+
+```
+userdb{
+ driver=static
+ arg=uid=vmailgid=vmailhome=/var/vmail/%d/%n
+}
+```
+
+Éditez le fichier `10-mail.conf`. Modifiez la ligne `mail_location` actuelle par celle-ci :
+ 
+    mail_location = maildir:/var/vmail/%d/%n/Maildir
+ 
+Vous pouvez commenter l’ancienne ligne et ajouter la nouvelle juste dessous.
+
+![](img/Mail/image31.png)
+
+Modifiez le fichier `10-master.conf`. Dans le bloc de configuration `service auth`, cherchez la partie `# Postfix smtp-auth` et y ajouter les lignes suivantes :
+
+```
+unix_listener/var/spool/postfix/private/auth{
+ mode0666
+ user=postfix
+ group=postfix
+}
+```
+
+![](img/Mail/image32.png)
+
+On va maintenant indiquer à Dovecot comment se connecter à la base de données. Placez-vous dans le dossier /etc/dovecot.
+ 
+Modifier le fichier `dovecot-sql.conf.ext`. Tout à la fin de ce fichier, ajouter les 3 lignes suivantes en adaptant avec vos informations :
+ 
+    driver=mysql
+    connect=host=127.0.0.1 dbname=postfix user=mailuser password=choose_a_password
+    password_query = SELECT username,domain,password FROM mailbox WHERE username='%u';
+ 
+Modifiez les droits sur le fichier `dovecot.conf` situé dans `/etc/dovecot` pour que Dovecot soit lancé en tant qu’utilisateur `vmail` :
+ 
+    chgrp vmail /etc/dovecot/dovecot.conf
+    chmod g+r /etc/dovecot/dovecot.conf
+ 
+Et pour terminer pour cette configuration de Dovecot, redémarrez le service :
+ 
+    service dovecot restart
+
+## Mise en place de la liaison Postfix <-> Dovecot
+
+Maintenant qu’on a d’un côté Postfix, qui sait quand un mail passe s’il est pour lui ou s’il doit le transmettre à un autre serveur mails, et Dovecot qui sait où les stocker, il faut donc que Postfix relaie les mails a Dovecot.
+ 
+Pour cela, ajouter les 2 lignes suivantes à la fin du fichier `/etc/postfix/master.cf`. 
+ 
+Attention, la deuxième ligne “flags” commence par deux espaces qui sont OBLIGATOIRES !
+
+    dovecotunix        –              n             n             –              –              pipe
+    flags=DRhu user=vmail:vmail argv=/usr/lib/dovecot/dovecot-lda -f ${sender} -d ${recipient}
+
+Si vous avez par la suite dans les logs des insultes de ce type…
+
+![](img/Mail/image1.png)
+
+…ne cherchez pas plus loin et revenez dans ce fichier, l’erreur est ici et il y a 99% de chance que ce ne soit qu’un problème de syntaxe.
+
+
+Redémarrez le service postfix :
+    
+    service postfix restart
+
+Et appliquez les modifications que l’on vient d’effectuer avec les 2 commandes suivantes :
+
+    postconf -e virtual_transport=dovecot
+    postconf -e dovecot_destination_recipient_limit=1
+
+Maintenant, nous allons tester la configuration actuelle.
+ 
+Pour l’instant, le dossier `/var/vmail` est vide. Nous pouvons le vérifier avec la commande :
+ 
+    tree /var/vmail
+ 
+Tentons d’envoyer un mail de test à l’utilisateur `informatique` en ligne de commande :
+    
+    echo test | mail informatique@ent.lan
+ 
+Cette commande ne produira aucun retour. Pour vérifier l’état de notre mail, il faut consulter les logs :
+ 
+    tail -f /var/log/mail.log
+ 
+Les dernières lignes des logs devraient ressembler à celles-ci :
+
+![](img/Mail/image2.png)
+
+Nous voyons qu’un mail à destination de `informatique@ent.lan` a été bien envoyé. Le statut doit être à l’état `sent` sinon cela signifie qu’une erreur s’est glissée dans votre configuration.
+ 
+Relancer la commande suivante pour vérifier qu’une arborescence a bien été créée :
+
+    tree /var/vmail
+
+On voit qu’un dossier au nom du domaine a été créé, qu’il contient un dossier au nom de notre utilisateur `informatique` et que ce dernier à un fichier, un message, dans le dossier `new`.
+ 
+Le serveur de messagerie est donc bien paramétré et désormais fonctionnel !
+
+## Installation et configuration de Rainloop
+
+Nous allons, pour conclure ce long tuto, installer le webmail Rainloop pour que les utilisateurs consultent leurs messages en graphique.
+ 
+Créez un répertoire `rainloop` dans `/var/www/html` et placez-vous à l’intérieur:
+
+    mkdir /var/www/html/rainloop
+    cd /var/www/html/rainloop
+ 
+Récupérez la dernière version de Rainloop :
+ 
+    wget -qO- https://repository.rainloop.net/installer.php | php
+ 
+Toujours dans le dossier `/var/www/html/rainloop`, appliquez les droits nécessaires et préconisés par Rainloop :
+ 
+    find . -type d -exec chmod 755 {} \;
+    find . -type f -exec chmod 644 {} \;
+    chown -R www-data:www-data .
+
+Allez dans `/etc/apache2/sites-available` et copiez le fichier `000-default.conf` en le renommant `rainloop.conf`:
+ 
+    cp 000-default.conf rainloop.conf
+ 
+Éditez ce nouveau fichier rainloop.conf. Remplacez la ligne `DocumentRoot` actuelle par `DocumentRoot = /var/www/html/rainloop`
+
+![](img/Mail/image4.png)
+
+ 
+Activez le site de rainloop et redémarrez apache2 pour appliquer les changements :
+ 
+    a2ensite rainloop.conf
+    service apache2 restart
+ 
+Depuis le navigateur internet d’un client, allez à l’adresse suivante (sans oublier le ?):
+ 
+http://srv-mail.ent.lan/rainloop/?admin
+
+![](img/Mail/image5.png)
+
+Les identifiants de connexion par défaut (qui peuvent et même DOIVENT être modifiés) sont :
+ 
+    Login : admin
+    MDP : 12345
+
+![](img/Mail/image6.png)
+
+Vous pouvez modifier la langue de l’interface en cliquant sur le langage défini et sélectionnant 
+celui souhaité dans la liste.
+
+![](img/Mail/image7.png)
+
+On va déclarer notre domaine « ent.lan ». Allez dans le menu « Domaines » sur la droite et cliquez sur « + Ajouter un domaine ».
+
+![](img/Mail/image8.png)
+
+Renseignez le nom complet (nom+domaine) du serveur qui gère la messagerie dans la partie IMAP et SMTP. Les ports peuvent être laissés par défaut sur 143 pour IMAP et 25 pour SMTP.
+ 
+Les 2 parties « Secure » doivent être définies sur « None » car nous n’avons pas abordé ce point. Et enfin, décochez toutes les cases éventuellement cochées.
+
+![](img/Mail/image9.png)
+
+Cliquez sur le bouton « i Test » pour vérifier la configuration. Si aucune erreur n’apparaît, cliquez sur « + Ajouter ».
+ 
+Le client webmail est prêt ! On le teste ? OK ! Allez à l’adresse suivante :
+http://srv-mail.ent.lan/rainloop/
+ 
+Connectez-vous en utilisant l’adresse mail et le mot de passe d’un des 2 utilisateurs que vous avez créés dans Postfixadmin.
+ 
+![](img/Mail/image10.png)
+
+Une fois connecté, on retrouve dans la boîte de réception le mail envoyé tout à l’heure en ligne de commande.
+ 
+Allez, on va envoyer un mail à notre 2nd utilisateur créé avec Postfixadmin ! Cliquez sur Nouveau en haut à gauche et envoyez le message souhaité au destinataire (ça, pas besoin de vous dire comment faire je suis sûre)
+
+![](img/Mail/image18.png)
+
+Et pour vérifier, et bien c’est simple, on se connecte sur la seconde boîte mail, c’est-à-dire celle du destinataire !
+
+![](img/Mail/image20.png)
+
+Nous avons bien reçu le message de informatique@ent.lan ! 
+
+Nous disposons d’un serveur de messagerie fonctionnel grâce à Postfix et Dovecot et du webmail Rainloop pour que nos utilisateurs puissent consulter leurs mails !
+
+
 
 # Fichiers de configuration
 
