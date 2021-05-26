@@ -83,6 +83,10 @@
   - [Configuration de PfSense](#configuration-de-pfsense)
   - [Configuration du VPN :](#configuration-du-vpn-)
   - [Configuration du client :](#configuration-du-client-)
+- [Tests](#tests)
+  - [Connectivité de l’infrastructure réseau](#connectivité-de-linfrastructure-réseau)
+  - [Configuration du VPN entre deux routeurs Cisco](#configuration-du-vpn-entre-deux-routeurs-cisco)
+  - [Protocole HSRP](#protocole-hsrp)
 - [Fichiers de configuration](#fichiers-de-configuration)
   - [Routeurs](#routeurs)
   - [Switches](#switches)
@@ -1404,6 +1408,117 @@ Notre vpn est maintenant connecté :
 ![](img/PfSense/image9.png)
 
 Notre infrastructure est sécurisée grâce à l’ajout d’un pare feu après la connexion WAN. On a ajouté un serveur proxy qui nous permet de monitorer l’usage des utilisateurs et de créer un VPN qui nous permet de travailler a distance sur notre réseau local.
+
+---
+
+# Tests
+
+## Connectivité de l’infrastructure réseau
+
+Connectivité d’une machine du réseau de Guingamp vers le routeur RG1:
+
+![](img/Test-infra/image5.png)
+
+Connectivité d’une machine  du réseau de Guingamp vers le routeur RG2:
+
+![](img/Test-infra/image1.png)
+
+Connectivité d’une machine du réseau de Guingamp vers le routeur de Rennes RR1:
+
+![](img/Test-infra/image2.png)
+
+Connectivité d’une machine du réseau de Guingamp vers le switch de Rennes SR1:
+
+![](img/Test-infra/image3.png)
+
+Connectivité d’une machine du réseau de Guingamp sur une machine du réseau de Rennes:
+
+![](img/Test-infra/image4.png)
+
+## Configuration du VPN entre deux routeurs Cisco
+
+Plusieurs commandes nous permettent de vérifier ce qu’il a été mis en place et s’assurer du bon fonctionnement. Puis également le paramétrage choisi pour le VPN.
+
+    show crypto isakmp policy
+
+![](img/Test-vpn/image3.png)
+
+> On observe que la police numéro 10 a été créée avec l’algorithme AES 128 bits pour le chiffrement, MD5 comme algorithme de hash, une méthode d’authentification par Pre­Shared Key, un groupe Diffie-Hellman de 2 (1024 bit), et une durée de vie de 21 600 secondes.
+
+    show crypto map
+
+![](img/Test-vpn/image7.png)
+
+> Cette  commande nous permet d’afficher un certain nombre de détails sur la crypto­map configurée, et
+l’interface sur laquelle elle a été appliquée. On y retrouve également les paramètres utilisés pour l’établissement du tunnel de la phase 2 du protocole IKE.
+
+On peut obtenir davantage de détails sur le tunnel de la phase 2.
+
+    show crypto ipsec sa
+
+![](img/Test-vpn/image5.png)
+
+> Dans l’exemple ci­-dessus, on remarque que onze paquets ont été chiffrés.
+
+    show crypto ipsec transform-set
+
+![](img/Test-vpn/image1.png)
+
+> Cette commande nous donne la configuration de notre transform-set. On voit qu’on a utilisé le protocole AES pour l’authentication et le protocol SHA-HMAC pour le chiffrement.
+
+    show crypto isakmp sa
+
+![](img/Test-vpn/image6.png)
+
+> Avec cette commande on y aperçoit l’adresse ip de destination et de la source des routeurs utilisée pour le tunnel vpn. Puis également le statut du vpn.
+
+Lorsque l’on se rend sur une machine dans le réseau et de Guingamp et qu’on communique avec une machine dans le réseau de Rennes on remarque avec la commande tracert que le tunnel vpn est bien installé entre RG2 et RR1.
+
+    tracert [adresse_ip_destination]
+
+![](img/Test-vpn/image4.png)
+
+Une fois le routeur RG2 (172.16.200.253) atteint, les données vont dans le tunnel vpn jusqu’au routeur RR1 (172.16.204.2) . On ne voit plus les routeurs WAN1 et WAN2. 
+
+Pour réaliser le tunnel ipsec on a dû débrancher le routeur RG1  du réseau car on ne peut pas faire du HSRP sur des interfaces connectées en serial. Notre seul autre moyen était d’avoir des routeurs avec au moins trois interfaces FastEthernet ou GigaEthernet mais on avait à notre disposition que des Routeurs Cisco 1841.
+
+## Protocole HSRP
+
+Une fois l’installation et la mise en place du HSRP, on peut passer à notre phase de test.
+
+(Routeur RG1 -> 172.16.200.254)
+
+(Routeur RG2 -> 172.16.200.253)
+
+Pour voir les informations de bases du HSRP sur nos routeurs on peut utiliser la commande `show standby brief`. On y aperçoit le groupe, le statut, l’interface sur laquelle le protocole HSRP fonctionne ainsi que l’adresse ip virtuelle qu’on a définit.
+
+![](img/Test-HSRP/image4.png)
+
+Dans un premier temps lorsque les deux routeurs de Guingamp (RG1 et RG2) sont opérationnels, c’est le routeur RG1 qui est actif. Lorsqu'on effectue un tracert d’un pc de Guingamp vers un pc client sur le réseau de Rennes on aperçoit bien qu’il passe par notre RG1 avec un `tracert`:
+
+![](img/Test-HSRP/image2.png)
+
+Si l’on se rend sur le routeur RG1 et qu’on tape la commande `show standby`, on voit bien que le routeur est en mode actif:
+
+![](img/Test-HSRP/image5.png)
+
+Et que sur le routeur RG2, le routeur est en mode attente.
+
+![](img/Test-HSRP/image3.png)
+
+Dans un second temps, on va débrancher le routeur RG1 du réseau afin de vérifier que le routeur RG2 prenne bien le relais. On effectue un tracert d’un pc de Guingamp vers un pc client du réseau de Rennes et on aperçoit bien que les trames passent par RG2.
+
+![](img/Test-HSRP/image7.png)
+
+Si l’on va sur le routeur RG2, on remarque bien qu’il passe en mode actif.
+
+![](img/Test-HSRP/image6.png)
+
+Puis dans un troisième temps, on remarque que lorsqu'on rebranche le routeur RG1 sur le réseau, il passe de nouveau en mode actif et reprend le relais. 
+
+![](img/Test-HSRP/image1.png)
+
+---
 
 # Fichiers de configuration
 
